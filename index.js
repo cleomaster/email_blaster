@@ -1,23 +1,19 @@
 const express = require('express');
 const app = express();
 const nodemailer = require('nodemailer');
+const cors = require('cors')
+const fileupload = require('express-fileupload');
 
 
+app.use(fileupload());
 app.use(express.json());
-
-
-app.get("/me", (req, res) => {
-
-    return res.send("Hi");
-});
-
-
-app.post("/postemail", (req, res) => {
+app.use(cors());
 
 
 
+function sendEmails(emails, subject, body, data) {
 
-    let transporter = nodemailer.createTransport({
+ let transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
             user: 'anderson.axosbank@gmail.com',
@@ -25,23 +21,17 @@ app.post("/postemail", (req, res) => {
         }
     });
 
-    let mailOptions1 = {
+    emails.forEach(email => {    
+    let mailOptions = {
         from: 'anderson.axosbank@gmail.com',
-        to: 'tonikr1011@gmail.com',
-        subject: 'Test Email',
-        text: 'This is a test email sent using nodemailer.'
+        to: email,
+        subject: subject,
+        html: body,
+        attachments: data
     };
 
 
-    let mailOptions2 = {
-        from: 'anderson.axosbank@gmail.com',
-        to: 'cleo.master0000@gmail.com',
-        subject: 'Test Email',
-        text: 'This is a test email sent using nodemailer.'
-    };
-
-
-    transporter.sendMail(mailOptions1, function(error, info) {
+     transporter.sendMail(mailOptions, function(error, info) {
         if (error) {
             console.log(error);
         } else {
@@ -50,22 +40,38 @@ app.post("/postemail", (req, res) => {
         }
     });
 
-
-    transporter.sendMail(mailOptions2, function(error, info) {
-        if (error) {
-            console.log(error);
-        } else {
-            console.log('Email sent: ' + info.response);
-            return res.send("Done");
-        }
     });
 
+}
 
-
-    
-
-
+app.get("/me", (req, res) => {
+    return res.send("Hi");
 });
+
+
+app.post("/postemails", (req, res) => {
+
+//    console.log(req.body["emails"]);
+    const data = [];
+
+   const files = req.files;
+   for (const filename in files) {
+    const file = files[filename];
+    data.push({ filename: file.name, content: file.data });
+  }
+
+ // console.log(data);
+
+ //console.log(req.body["emails"].split(","));
+
+ sendEmails(req.body["emails"].split(","), req.body["subject"], req.body["body"], data);
+});
+
+
+app.post("/check", (req, res) => {
+    console.log(req.files);
+    res.send("okay");
+})
 
 
 
